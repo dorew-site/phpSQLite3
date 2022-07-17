@@ -10,7 +10,7 @@ $dir_sqlite3 = $_SERVER['DOCUMENT_ROOT'];
 $sqlite = new phpSQLite3();
 ```
 
-> Example:
+> Example / Ví dụ:
 ```php
 require_once 'phpSQLite3.php';
 
