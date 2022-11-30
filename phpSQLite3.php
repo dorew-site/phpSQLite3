@@ -10,8 +10,8 @@ class phpSQLite3
 
     public function __construct()
     {
-        global $dir_sqlite3;
-        $path_sqlite = $dir_sqlite3 . '/database.sqlite';
+        global $dir_site_custom;
+        $path_sqlite = $dir_site_custom.'/database.sqlite';
         if (!file_exists($path_sqlite)) {
             file_put_contents($path_sqlite, '');
         }
@@ -28,11 +28,90 @@ class phpSQLite3
         return 'phpSQLite3';
     }
 
+    /**_____ FUNCTION TRUY -> XUẤT _____**/
+
+   public function data_count($sql){
+        return $this->db->querySingle($sql);
+    }
+    public function data_assoc($sql) {
+        $result = $this->db->query($sql);
+        return $result->fetchArray(SQLITE3_ASSOC);
+    }
+
+    public function data_while($sql) {
+        $result = $this->db->query($sql);
+             while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                  $data[]=$row;
+             }
+     return $data;
+    }
+
+    public function data_exec($sql) {
+           return $this->db->exec($sql);
+    }
+    public function data_query($sql) {
+        return $this->db->query($sql);
+    }
+
     /*
     -----------------------------------------------------------------
     Action with tables in database
     -----------------------------------------------------------------
     */
+
+    /* --- QUERY_COMMAND_TABLE --- */
+
+    function query_select_table($table_name = null, $column = null, $other_sql = null)
+    {
+        if (!$table_name) {
+            return 'There is not table_name in query_select_table()';
+        } else {
+            if (!$this->table_exists($table_name)) {
+                return 'Table `' . $table_name . '` does not exist';
+            } else {
+                if (!$column) {
+                    $sql = "SELECT * FROM $table_name";
+                } else {
+                    $sql = "SELECT $column FROM $table_name";
+                }
+                if ($other_sql) {
+                    $sql .= " $other_sql";
+                }
+                $result = $this->db->query($sql);
+                $data = [];
+                while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                    $data[] = $row;
+                }
+                return $data;
+            }
+        }
+    }
+
+    function query_update_table($table_name = null, $array_row = null, $other_sql = null)
+    {
+        if (!$table_name) {
+            return 'There is not table_name in query_update_table()';
+        } else {
+            if (!$this->table_exists($table_name)) {
+                return 'Table `' . $table_name . '` does not exist';
+            } else {
+                if (is_array($array_row)) {
+                    $sql = "UPDATE $table_name SET ";
+                    foreach ($array_row as $key => $value) {
+                        $sql .= "`$key` = '$value',";
+                    }
+                    $sql = rtrim($sql, ',');
+                    if ($other_sql) {
+                        $sql .= " $other_sql";
+                    }
+                    $this->db->query($sql);
+                    return 'Rows in table `' . $table_name . '` updated';
+                } else {
+                    return 'There is not array_row in query_update_table()';
+                }
+            }
+        }
+    }
 
     /* --- QUERY AND PROCESS DATA IN TABLE --- */
 
@@ -283,6 +362,7 @@ class phpSQLite3
                 if ($error) {
                     $notice = 'The mentioned data columns do not exist, those are: ';
                     foreach ($error as $key => $value) {
+                        $value = $this->db->escapeString($value);
                         $notice .= $value;
                         if ($key < count($error) - 1) {
                             $notice .= ', ';
@@ -336,6 +416,7 @@ class phpSQLite3
             if ($this->table_exists($table_name)) {
                 $sql = "UPDATE `$table_name` SET ";
                 foreach ($columns as $key => $value) {
+                    $value = $this->db->escapeString($value);
                     $sql .= "$key = '$value', ";
                 }
                 $sql = substr($sql, 0, -2);
